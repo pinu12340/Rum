@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *{box-sizing: border-box; margin: 0;}
+        body { height:100vh;width: 100 vw; display: flex;justify-content: center;}
+        #ItemPreview{ grid-area:main; height: 40vh;width: 30vw;  background-color: gray; object-fit: scale-down;}
+        #finalPreview{grid-area: three;height: 40vh;width: 30vw; background-color: gray; object-fit:scale-down;}
+        .container{display: grid; grid-template-columns: 30vw 100px 100px 30vw; grid-template-rows: 40vh 40px ; 
+            grid-template-areas: "main main three three"
+                                 "four one one two";}
+        #man{background-color: rgb(2, 145, 255);color: antiquewhite; grid-area: one;}
+    </style>
+</head>
+<body>
+    <div class="container"> <img id="ItemPreview" src=""><img id="finalPreview" src="">
+        <input type="file" name="man" id="man" onchange="get_request2()">
+    </div>
+   
+        
+</body>
+
+<script>
+    async function get_request(){
+    const response = await fetch("http://localhost:8000/getImage",{method:"post"});
+    let finalres = {}
+    const text =  await  response.text()
+    document.getElementById("ItemPreview").src = "data:image/png;base64," + text;
+
+    }
+
+    async function get_request2(){
+    
+    let file = document.getElementById("man").files[0]
+    let arrayBuffer = await file.arrayBuffer()
+    const b64string =  btoa(
+  new Uint8Array(arrayBuffer)
+    .reduce((data, byte) => data + String.fromCharCode(byte), '')
+);
+    console.log(arrayBuffer)
+    console.log(b64string)
+    document.getElementById("ItemPreview").src = "data:image/png;base64," + b64string;
+    const request = new Request("http://localhost:8000/remove_background", {
+  method: "POST",
+  headers: [["content-type","application/json"]],
+  body:JSON.stringify({imgString:b64string}),
+});
+    const response = await fetch(request);
+    let finalres = {}
+    const text =  await  response.text()
+    document.getElementById("finalPreview").src = "data:image/png;base64," + text;
+
+    }
+
+    
+    
+  
+
+</script>
+</html>
