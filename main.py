@@ -1,39 +1,22 @@
-import PIL.Image
-from fastapi import FastAPI, Response
-from pydantic import BaseModel
-import base64
-from io import BytesIO
-import PIL
+from flask import Flask, render_template, request
 from rembg import remove
-from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image
+from io import BytesIO
+import base64
 
-class ImgFile(BaseModel):
-    imgString : str
+app = Flask(__name__)
 
-app = FastAPI()
+@app.route("/", methods=["GET", "POST"])
+def index():
+    image_data = None
+    if request.method == "POST":
+        file = request.files["image"]
+        img = Image.open(file.stream)
+        result = remove(img)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+        img_io = BytesIO()
+        result.save(img_io, "PNG")
+        img_io.seek(0)
 
-
-@app.get("/")
-def helloworld():
-    return {"message": "congrats"}
-
-
-
-@app.post("/remove_background")
-def background_remover(file : ImgFile):
-    imgString = file.imgString
-    imgBin = base64.b64decode(imgString)
-    imgBytes = BytesIO(imgBin)
-    pilImg = PIL.Image.open(imgBytes)
-    backgroundremoveImage = remove(pilImg)
-    outBytes =  BytesIO()
-    backgroundremoveImage.save(outBytes,"png")
-    return Response(base64.b64encode(outBytes.getvalue()),status_code=200,media_type="text/base64")
+        image_data = base64.b64encode(img_io.getvalue()).decode('utf-8')
+    return render_template("index.html", image_data = image_data)
